@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colo Image Ref</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>Colo Image Ref</h1>
+  <input id="search" type="search" placeholder="Search name, prompt, notes…" autocomplete="off">
+  <select id="sort" title="Sort images">
+    <option value="mtime:desc">Newest modified</option>
+    <option value="mtime:asc">Oldest modified</option>
+    <option value="created:desc">Recently added</option>
+    <option value="name:asc">Name A–Z</option>
+    <option value="name:desc">Name Z–A</option>
+    <option value="rating:desc">Highest rated</option>
+  </select>
+  <button id="select-mode" title="Select multiple images">Select</button>
+  <button id="rescan" title="Re-scan configured folders">Rescan</button>
+  <button id="settings-btn" title="Library folders">Folders</button>
+</header>
+
+<div id="settings-pop" class="hidden">
+  <h2>Library roots</h2>
+  <p class="hint">One absolute path per line. Images are only read, never modified.</p>
+  <textarea id="roots-edit" rows="4" spellcheck="false"></textarea>
+  <div class="row">
+    <button id="roots-save">Save &amp; rescan</button>
+    <button id="roots-cancel" class="ghost">Cancel</button>
+  </div>
+</div>
+
+<aside id="sidebar">
+  <nav>
+    <button class="nav-btn active" data-nav="all">All images <span id="stat-images"></span></button>
+    <button class="nav-btn" data-nav="fav">Favorites <span id="stat-fav"></span></button>
+    <button class="nav-btn" data-nav="duplicates">Duplicates <span id="stat-duplicates"></span></button>
+    <button class="nav-btn" data-nav="trash">Trash <span id="stat-trash"></span></button>
+  </nav>
+
+  <section>
+    <h3>Folders <button id="new-folder" class="mini" title="New folder">+</button></h3>
+    <ul id="folder-list" class="side-list"></ul>
+  </section>
+
+  <section>
+    <h3>Collections <button id="new-collection" class="mini" title="New collection">+</button></h3>
+    <ul id="collection-list" class="side-list collection-list"></ul>
+  </section>
+
+  <section>
+    <h3>Baskets <button id="new-basket" class="mini" title="New export basket">+</button></h3>
+    <ul id="basket-list" class="side-list basket-list"></ul>
+  </section>
+
+  <section>
+    <h3>Rating</h3>
+    <select id="rating-filter">
+      <option value="">Any rating</option>
+      <option value="5">★★★★★</option>
+      <option value="4">★★★★</option>
+      <option value="3">★★★</option>
+      <option value="2">★★</option>
+      <option value="1">★</option>
+      <option value="0">Unrated</option>
+    </select>
+  </section>
+
+  <section>
+    <h3>Display</h3>
+    <label class="check"><input id="blur-explicit" type="checkbox"> blur explicit images</label>
+  </section>
+
+  <section>
+    <h3>Tag filter</h3>
+    <input id="tag-input" type="text" placeholder="Type to search tags…" autocomplete="off">
+    <ul id="tag-suggest" class="suggest hidden"></ul>
+    <label class="check"><input id="artist-only" type="checkbox"> artists only</label>
+  </section>
+
+  <section>
+    <h3>LoRA filter</h3>
+    <input id="lora-input" type="text" placeholder="Type to search LoRAs…" autocomplete="off">
+    <ul id="lora-suggest" class="suggest hidden"></ul>
+  </section>
+</aside>
+
+<main id="main">
+  <div id="bulkbar" class="hidden">
+    <strong id="bulk-count">0 selected</strong>
+    <button id="bulk-loaded" class="mini">Select loaded</button>
+    <button id="bulk-favorite" class="mini">Favorite</button>
+    <button id="bulk-explicit" class="mini">Explicit</button>
+    <select id="bulk-rating" title="Set rating">
+      <option value="">Rating…</option>
+      <option value="5">★★★★★</option><option value="4">★★★★</option>
+      <option value="3">★★★</option><option value="2">★★</option>
+      <option value="1">★</option><option value="0">Unrated</option>
+    </select>
+    <select id="bulk-collection"><option value="">Add to collection…</option></select>
+    <select id="bulk-basket"><option value="">Add to basket…</option></select>
+    <select id="bulk-move"><option value="">Move to folder…</option></select>
+    <button id="bulk-delete" class="mini danger-inline">Delete</button>
+    <button id="bulk-clear" class="mini ghost">Clear</button>
+  </div>
+  <div id="chips"></div>
+  <div id="grid"></div>
+  <div id="sentinel"></div>
+  <div id="empty" class="hidden">
+    <p>No images here yet.</p>
+    <p>Drag &amp; drop PNG/JPG files anywhere in this window, or copy them into a library root and hit <b>Rescan</b>.</p>
+    <p class="hint">Roots are listed under the <b>Folders</b> button.</p>
+  </div>
+</main>
+
+<div id="overlay" class="hidden">
+  <div id="overlay-img-wrap">
+    <img id="overlay-img" alt="">
+    <button id="p-reveal" class="reveal-explicit hidden">Reveal explicit image</button>
+  </div>
+  <div id="panel">
+    <div class="panel-head">
+      <div>
+        <div id="p-name" class="p-name"></div>
+        <div id="p-sub" class="p-sub"></div>
+      </div>
+      <button id="p-fav" class="fav-btn" title="Toggle favorite (f)">♡</button>
+    </div>
+
+    <div class="p-block">
+      <div id="p-src" class="p-src hidden"></div>
+      <div class="p-label">Prompt <button id="p-copy" class="mini">copy</button></div>
+      <div id="p-prompt" class="p-text"></div>
+    </div>
+    <div class="p-block hidden" id="p-neg-block">
+      <div class="p-label">Negative</div>
+      <div id="p-negative" class="p-text dim"></div>
+    </div>
+    <div class="p-block" id="p-stats-block">
+      <div class="p-label">Generation</div>
+      <dl id="p-stats" class="stats"></dl>
+    </div>
+    <div class="p-block compact-actions">
+      <div class="p-label">Rating</div>
+      <div id="p-rating" class="rating-buttons" aria-label="Image rating"></div>
+      <button id="p-similar" class="ghost">Find similar images</button>
+    </div>
+    <div class="p-block hidden" id="p-lora-block">
+      <div class="p-label">LoRAs</div>
+      <div id="p-loras" class="chip-row"></div>
+    </div>
+    <div class="p-block hidden" id="p-tag-block">
+      <div class="p-label">Tags <span class="hint">click = filter, ★ = artist</span></div>
+      <div id="p-tags" class="chip-row"></div>
+    </div>
+    <div class="p-block hidden" id="p-neg-tag-block">
+      <div class="p-label">Negative tags <span class="hint">click = filter, ★ = artist</span></div>
+      <div id="p-neg-tags" class="chip-row"></div>
+    </div>
+    <div class="p-block">
+      <div class="p-label">Collections <span class="hint">independent from folders and prompts</span></div>
+      <div id="p-collections" class="collection-checks"></div>
+    </div>
+    <div class="p-block">
+      <div class="p-label">Baskets <span class="hint">saved export selections</span></div>
+      <div id="p-baskets" class="collection-checks"></div>
+    </div>
+    <div class="p-block">
+      <label class="check explicit-check"><input id="p-explicit" type="checkbox"> Mark as explicit</label>
+    </div>
+    <div class="p-block">
+      <div class="p-label">Add tag</div>
+      <input id="p-add-tag" type="text" placeholder="Enter to add" autocomplete="off">
+    </div>
+    <div class="p-block">
+      <div class="p-label">Source URL</div>
+      <input id="p-source" type="url" placeholder="https://…" spellcheck="false">
+    </div>
+    <div class="p-block">
+      <div class="p-label">Notes</div>
+      <textarea id="p-notes" rows="4"></textarea>
+    </div>
+    <div class="p-block">
+      <div class="p-label">Move to folder</div>
+      <select id="p-move"></select>
+    </div>
+    <div class="p-block">
+      <button id="p-delete" class="danger" title="Delete file from disk">Delete image</button>
+    </div>
+  </div>
+</div>
+
+<div id="drophint" class="hidden">
+  <div id="drophint-box">
+    <p>Drop images to add them</p>
+    <p id="drophint-target" class="hint"></p>
+  </div>
+</div>
+
+<div id="toasts"></div>
+<script src="/app.js" defer></script>
+</body>
+</html>
