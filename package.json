@@ -1,11 +1,12 @@
 {
   "name": "colo-image-ref",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "files": [
     "README.md",
     "USER-GUIDE.md",
+    "START-COLO-IMAGE-REF.bat",
     "server.js",
     "smoke-test.js",
     "lib/",

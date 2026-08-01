@@ -5,6 +5,10 @@
 For complete installation and use instructions, read the
 [user guide](USER-GUIDE.md).
 
+Windows users can extract the release ZIP and double-click
+`START-COLO-IMAGE-REF.bat`. The launcher checks required software, opens the
+browser, and keeps error messages visible.
+
 Colo Image Ref is a local gallery for organizing AI image references from
 ComfyUI, A1111, NovelAI, and Cologen PNGs, plus A1111-style JPEGs.
 Browse thumbnails, sort images into real folders, and keep prompt / tags / LoRAs /

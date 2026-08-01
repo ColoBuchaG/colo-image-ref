@@ -119,18 +119,30 @@ Basket ZIP export requires a compatible `zip` command in the Windows PATH.
 3. Select **Extract All**.
 4. Select **Extract**.
 5. Open the extracted folder.
-6. Click the folder address bar.
-7. Type `powershell`.
-8. Press Enter.
-9. Type this command:
+6. Double-click `START-COLO-IMAGE-REF.bat`.
+7. Keep the black window open.
+8. Wait for Colo Image Ref to open in your browser.
+
+Windows can show a security question the first time that you open the file.
+Examine the file name.
+Continue only if the file name is `START-COLO-IMAGE-REF.bat` and you got the
+file from the official Colo Image Ref repository.
+
+If the start file does not work, use this manual procedure:
+
+1. Open the extracted folder.
+2. Click the folder address bar.
+3. Type `powershell`.
+4. Press Enter.
+5. Type this command:
 
 ```powershell
 npm start
 ```
 
-10. Press Enter.
-11. Keep the PowerShell window open.
-12. Open <http://127.0.0.1:4780> in your browser.
+6. Press Enter.
+7. Keep the PowerShell window open.
+8. Open <http://127.0.0.1:4780> in your browser.
 
 ## 5. Install on macOS
 
