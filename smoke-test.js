@@ -246,6 +246,9 @@ test('image list returns both, filters by query', async () => {
   idA = all.data.items.find((i) => i.name === 'a-meta.png').id;
   idB = all.data.items.find((i) => i.name === 'b-plain.png').id;
   assert.ok(idA && idB);
+  assert.equal(all.data.items.find((i) => i.id === idA).source, 'a1111');
+  assert.equal(all.data.items.find((i) => i.id === idB).source, '');
+  assert.ok(!Object.hasOwn(all.data.items[0], 'raw_meta'));
   const q = await j('/api/images?q=kan');
   assert.equal(q.data.total, 1);
   assert.equal(q.data.items[0].id, idA);

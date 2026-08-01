@@ -52,6 +52,8 @@ edited from the UI via the **Folders** button. New installations default to
 - Collections are virtual, sidecar-only groups. An image can belong to multiple
   collections without being copied or moved, while physical folders continue to
   control the file's real disk location.
+- Baskets are separate, saved export lists. Use collections for long-term
+  organization and baskets to gather files for one ZIP download.
 - Images can be manually marked explicit. With **blur explicit images** enabled,
   their thumbnails and full preview stay blurred until revealed. The preference
   is stored in the browser; the explicit mark is stored in SQLite.
@@ -68,6 +70,8 @@ edited from the UI via the **Folders** button. New installations default to
   or baskets, moving files, and confirmed moves to Trash.
 - Every gallery card has an immediate selection control. Selected images expose
   prominent **Mark explicit** and **Delete selected** batch actions above the grid.
+- Thumbnail badges identify recognized A1111, ComfyUI, NovelAI, and Cologen
+  sources without returning raw embedded metadata in the gallery API.
 - Images can be sorted by modified date, added date, filename, or rating. Delete
   actions move files into a hidden `.image-ref-trash` folder within their library
   root, preserving all sidecar data; the Trash view can restore them.

@@ -356,6 +356,13 @@ Select **Rescan** after you copy the files.
 - Use **Select** to change multiple images.
 - Use **Trash** to move an image to the application trash folder.
 
+The badge in the lower-left corner of a thumbnail shows its recognized source.
+The source can be A1111, ComfyUI, NovelAI, or Cologen.
+An image without recognized generation metadata does not have a source badge.
+
+Use the **Delete** button to the left of an image selection circle to move only
+that image to Trash.
+
 ### Select and change multiple images
 
 1. Find the selection circle in the upper-right corner of an image.
@@ -371,6 +378,19 @@ Use **Cancel selection** to clear the selection without a change.
 
 The application saves ratings, notes, collections, and tags in the `data` folder.
 The application does not write this information into the image files.
+
+### Collections and baskets
+
+Use a **collection** to organize images for long-term use.
+For example, make a collection for poses, lighting, or one character.
+An image can be in more than one collection.
+
+Use a **basket** to prepare files for export.
+For example, make a basket for the images that you want to send today.
+You can download the files in a basket together as a ZIP file.
+
+A collection and a basket do not move or copy the original image files.
+Deleting a collection or a basket does not delete its images.
 
 ## 9. Stop the application
 

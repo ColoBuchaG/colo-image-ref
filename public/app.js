@@ -1,6 +1,12 @@
 'use strict';
 
 const $ = (sel) => document.querySelector(sel);
+const SOURCE_INFO = {
+  a1111: { label: 'A1111', mark: 'A' },
+  cologen: { label: 'Cologen', mark: 'CO' },
+  comfyui: { label: 'ComfyUI', mark: 'UI' },
+  novelai: { label: 'NovelAI', mark: 'N' },
+};
 const state = {
   q: '',
   root: null,
@@ -129,6 +135,20 @@ function renderGrid() {
     img.decoding = 'async';
     img.alt = item.name;
     card.appendChild(img);
+    const sourceInfo = SOURCE_INFO[item.source];
+    if (sourceInfo) {
+      const sourceBadge = document.createElement('div');
+      sourceBadge.className = 'source-badge';
+      sourceBadge.dataset.source = item.source;
+      sourceBadge.title = `Source: ${sourceInfo.label}`;
+      const sourceMark = document.createElement('span');
+      sourceMark.className = 'source-mark';
+      sourceMark.textContent = sourceInfo.mark;
+      const sourceName = document.createElement('span');
+      sourceName.textContent = sourceInfo.label;
+      sourceBadge.append(sourceMark, sourceName);
+      card.appendChild(sourceBadge);
+    }
     if (item.explicit) {
       card.classList.add('explicit');
       if (state.blurExplicit && !state.revealedExplicit.has(item.id)) card.classList.add('blurred');
@@ -163,17 +183,15 @@ function renderGrid() {
       rating.textContent = '★'.repeat(item.rating);
       card.appendChild(rating);
     }
-    if (!state.selectionMode) {
-      const action = document.createElement('button');
-      action.className = `card-action${state.trash ? ' restore' : ''}`;
-      action.textContent = state.trash ? 'Restore' : 'Delete';
-      action.title = state.trash ? 'Restore image' : 'Move image to Trash';
-      action.addEventListener('click', async (event) => {
-        event.stopPropagation();
-        await runCardAction(item, i);
-      });
-      card.appendChild(action);
-    }
+    const action = document.createElement('button');
+    action.className = `card-action${state.trash ? ' restore' : ''}`;
+    action.textContent = state.trash ? 'Restore' : 'Delete';
+    action.title = state.trash ? 'Restore image' : 'Move image to Trash';
+    action.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      await runCardAction(item, i);
+    });
+    card.appendChild(action);
     const label = document.createElement('div');
     label.className = 'label';
     label.textContent = item.name;
@@ -195,6 +213,7 @@ async function runCardAction(item, index) {
   if (!restoring && !confirm(`Move ${item.name} to Trash?`)) return;
   try {
     await api(`/api/images/${item.id}${restoring ? '/restore' : ''}`, { method: restoring ? 'POST' : 'DELETE' });
+    state.selected.delete(item.id);
     state.items.splice(index, 1);
     toast(restoring ? 'Image restored' : 'Image moved to Trash');
     renderGrid();
@@ -644,13 +663,7 @@ function renderDetail() {
   $('#p-move').closest('.p-block').classList.toggle('hidden', Boolean(d.trashed_at));
   applyDetailBlur();
   const srcEl = $('#p-src');
-  const sourceLabels = {
-    a1111: 'A1111',
-    cologen: 'Cologen',
-    comfyui: 'ComfyUI',
-    novelai: 'NovelAI',
-  };
-  srcEl.textContent = sourceLabels[d.source] || d.source || '';
+  srcEl.textContent = SOURCE_INFO[d.source]?.label || d.source || '';
   srcEl.dataset.source = d.source || '';
   srcEl.classList.toggle('hidden', !d.source);
   $('#p-prompt').textContent = d.prompt_text || '';

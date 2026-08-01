@@ -346,12 +346,12 @@ export function createServer() {
     const { total } = db.prepare(`SELECT COUNT(*) AS total FROM images i ${whereSql}`).get(...args);
     const items = db.prepare(`
       SELECT i.id, i.root, i.dir, i.name, i.ext, i.width, i.height, i.size, i.favorite, i.explicit,
-             i.rating, i.meta_status, i.content_hash,
+             i.rating, i.meta_status, i.content_hash, i.raw_meta,
              i.created_at AS added
       FROM images i ${whereSql}
       ORDER BY ${sortCol} ${sortDir}, i.id ${sortDir}
       LIMIT ? OFFSET ?
-    `).all(...args, limit, (page - 1) * limit);
+    `).all(...args, limit, (page - 1) * limit).map(withDetectedSource);
 
     return { items, total, page, pages: Math.max(1, Math.ceil(total / limit)) };
   }
@@ -611,12 +611,12 @@ export function createServer() {
     const threshold = Math.max(0, Math.min(32, Number(params.get('threshold')) || 10));
     const limit = Math.max(1, Math.min(200, Number(params.get('limit')) || 60));
     const items = db.prepare(`
-      SELECT id, root, dir, name, ext, width, height, size, favorite, explicit, rating, content_hash,
+      SELECT id, root, dir, name, ext, width, height, size, favorite, explicit, rating, content_hash, raw_meta,
              hamming64(perceptual_hash, ?) AS distance
       FROM images
       WHERE id != ? AND trashed_at = 0 AND perceptual_hash != '' AND hamming64(perceptual_hash, ?) <= ?
       ORDER BY distance, id DESC LIMIT ?
-    `).all(source.perceptual_hash, id, source.perceptual_hash, threshold, limit);
+    `).all(source.perceptual_hash, id, source.perceptual_hash, threshold, limit).map(withDetectedSource);
     return { source: id, threshold, items };
   }
 
@@ -856,6 +856,13 @@ function sanitizeRoots(roots) {
     out.push(abs);
   }
   return out;
+}
+
+function withDetectedSource(row) {
+  let raw = {};
+  try { raw = row.raw_meta ? JSON.parse(row.raw_meta) : {}; } catch { raw = {}; }
+  const { raw_meta: _rawMeta, ...item } = row;
+  return { ...item, source: detectSource(raw) };
 }
 
 // Reject absolute paths and traversal; '' means the root itself.
