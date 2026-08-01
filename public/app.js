@@ -24,6 +24,7 @@ const state = {
   sort: 'mtime',
   sortDir: 'desc',
   blurExplicit: localStorage.getItem('blurExplicit') !== 'false',
+  showSourceBadges: localStorage.getItem('showSourceBadges') !== 'false',
   revealedExplicit: new Set(),
   page: 1,
   pages: 1,
@@ -136,7 +137,7 @@ function renderGrid() {
     img.alt = item.name;
     card.appendChild(img);
     const sourceInfo = SOURCE_INFO[item.source];
-    if (sourceInfo) {
+    if (sourceInfo && state.showSourceBadges) {
       const sourceBadge = document.createElement('div');
       sourceBadge.className = 'source-badge';
       sourceBadge.dataset.source = item.source;
@@ -1089,6 +1090,11 @@ function bindHeader() {
     renderGrid();
     applyDetailBlur();
   });
+  $('#show-source-badges').addEventListener('change', () => {
+    state.showSourceBadges = $('#show-source-badges').checked;
+    localStorage.setItem('showSourceBadges', String(state.showSourceBadges));
+    renderGrid();
+  });
   $('#new-folder').addEventListener('click', async () => {
     const dir = prompt('New folder path (relative to a root), e.g. "poses/hands":');
     if (!dir) return;
@@ -1275,6 +1281,7 @@ function bindDrop() {
 
 function init() {
   $('#blur-explicit').checked = state.blurExplicit;
+  $('#show-source-badges').checked = state.showSourceBadges;
   updateSelectionUi();
   bindHeader();
   bindDetailEvents();

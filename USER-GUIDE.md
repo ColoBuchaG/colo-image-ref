@@ -359,6 +359,9 @@ Select **Rescan** after you copy the files.
 The badge in the lower-left corner of a thumbnail shows its recognized source.
 The source can be A1111, ComfyUI, NovelAI, or Cologen.
 An image without recognized generation metadata does not have a source badge.
+Clear **show source badges** under **Display** to hide all source badges.
+Select **show source badges** again to show them.
+The browser saves this setting.
 
 Use the **Delete** button to the left of an image selection circle to move only
 that image to Trash.

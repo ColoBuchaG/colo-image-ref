@@ -71,7 +71,8 @@ edited from the UI via the **Folders** button. New installations default to
 - Every gallery card has an immediate selection control. Selected images expose
   prominent **Mark explicit** and **Delete selected** batch actions above the grid.
 - Thumbnail badges identify recognized A1111, ComfyUI, NovelAI, and Cologen
-  sources without returning raw embedded metadata in the gallery API.
+  sources without returning raw embedded metadata in the gallery API. A saved
+  browser preference can hide or show all thumbnail source badges.
 - Images can be sorted by modified date, added date, filename, or rating. Delete
   actions move files into a hidden `.image-ref-trash` folder within their library
   root, preserving all sidecar data; the Trash view can restore them.
