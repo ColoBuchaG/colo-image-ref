@@ -1,0 +1,24 @@
+{
+  "name": "colo-image-ref",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "README.md",
+    "USER-GUIDE.md",
+    "server.js",
+    "smoke-test.js",
+    "lib/",
+    "public/"
+  ],
+  "description": "Colo Image Ref — a local gallery for organizing AI image references without modifying the source files.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "check": "node --check server.js && node --check smoke-test.js && node --check public/app.js && node --check lib/db.js && node --check lib/imagefile.js && node --check lib/meta.js && node --check lib/scanner.js && node --check lib/watcher.js",
+    "smoke": "node smoke-test.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
