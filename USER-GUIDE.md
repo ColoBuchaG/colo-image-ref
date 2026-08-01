@@ -356,6 +356,19 @@ Select **Rescan** after you copy the files.
 - Use **Select** to change multiple images.
 - Use **Trash** to move an image to the application trash folder.
 
+### Select and change multiple images
+
+1. Find the selection circle in the upper-right corner of an image.
+2. Select the circle.
+3. Select the circles on the other images that you want to change.
+4. Examine the batch-action bar above the gallery.
+5. Select **Mark explicit** to mark all selected images as explicit.
+6. Or, select **Delete selected** to move all selected images to Trash.
+7. Confirm the delete action when the application asks you.
+
+Use **Select loaded** to select all images that are currently loaded in the gallery.
+Use **Cancel selection** to clear the selection without a change.
+
 The application saves ratings, notes, collections, and tags in the `data` folder.
 The application does not write this information into the image files.
 

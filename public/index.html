@@ -18,7 +18,7 @@
     <option value="name:desc">Name Z–A</option>
     <option value="rating:desc">Highest rated</option>
   </select>
-  <button id="select-mode" title="Select multiple images">Select</button>
+  <button id="select-mode" title="Select multiple images">Batch select</button>
   <button id="rescan" title="Re-scan configured folders">Rescan</button>
   <button id="settings-btn" title="Library folders">Folders</button>
 </header>
@@ -92,8 +92,9 @@
   <div id="bulkbar" class="hidden">
     <strong id="bulk-count">0 selected</strong>
     <button id="bulk-loaded" class="mini">Select loaded</button>
+    <button id="bulk-explicit" class="mini batch-primary">Mark explicit</button>
+    <button id="bulk-delete" class="mini danger-inline">Delete selected</button>
     <button id="bulk-favorite" class="mini">Favorite</button>
-    <button id="bulk-explicit" class="mini">Explicit</button>
     <select id="bulk-rating" title="Set rating">
       <option value="">Rating…</option>
       <option value="5">★★★★★</option><option value="4">★★★★</option>
@@ -103,8 +104,7 @@
     <select id="bulk-collection"><option value="">Add to collection…</option></select>
     <select id="bulk-basket"><option value="">Add to basket…</option></select>
     <select id="bulk-move"><option value="">Move to folder…</option></select>
-    <button id="bulk-delete" class="mini danger-inline">Delete</button>
-    <button id="bulk-clear" class="mini ghost">Clear</button>
+    <button id="bulk-clear" class="mini ghost">Cancel selection</button>
   </div>
   <div id="chips"></div>
   <div id="grid"></div>

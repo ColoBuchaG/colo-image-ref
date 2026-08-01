@@ -209,6 +209,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 }
 #bulkbar strong { min-width: 78px; color: #b8cbff; font-size: 12px; }
 #bulkbar select { width: auto; max-width: 180px; padding: 3px 7px; font-size: 12px; }
+.batch-primary { color: #c7d6ff; border-color: #5874b4; background: #263657; }
 .danger-inline { color: #ff929e; border-color: #6b3039; }
 #chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 #chips:empty { margin: 0; }
@@ -256,7 +257,10 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
   color: transparent;
   font-size: 13px;
   font-weight: 800;
+  padding: 0;
+  cursor: pointer;
 }
+.card .select-mark:hover { border-color: #b8c9f5; transform: scale(1.06); }
 .card.selected .select-mark { background: #6f94ee; border-color: #a9c0ff; color: white; }
 .card img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .card.blurred img { filter: blur(24px); transform: scale(1.12); }
@@ -275,7 +279,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 }
 .card .badge {
   position: absolute;
-  top: 6px;
+  top: 35px;
   right: 8px;
   color: #ff8a9a;
   font-size: 16px;
@@ -305,7 +309,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 .card-action {
   position: absolute;
   z-index: 4;
-  top: 7px;
+  top: 63px;
   right: 7px;
   display: none;
   padding: 3px 7px;
@@ -314,6 +318,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
   color: #ff9ca7;
   font-size: 11px;
 }
+.card:hover .card-action { display: block; }
 .card-action.restore { border-color: #355e48; background: rgba(19, 48, 33, 0.94); color: #9ee1b8; }
 .card-action:hover { border-color: currentColor; }
 .card:hover .label { opacity: 1; }

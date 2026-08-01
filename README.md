@@ -66,6 +66,8 @@ edited from the UI via the **Folders** button. New installations default to
 - Ratings are stored from 0–5 stars and can be assigned individually or in bulk.
 - Select mode supports bulk favorite/explicit/rating changes, adding to collections
   or baskets, moving files, and confirmed moves to Trash.
+- Every gallery card has an immediate selection control. Selected images expose
+  prominent **Mark explicit** and **Delete selected** batch actions above the grid.
 - Images can be sorted by modified date, added date, filename, or rating. Delete
   actions move files into a hidden `.image-ref-trash` folder within their library
   root, preserving all sidecar data; the Trash view can restore them.

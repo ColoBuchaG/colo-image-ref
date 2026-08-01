@@ -143,10 +143,18 @@ function renderGrid() {
       badge.textContent = '♥';
       card.appendChild(badge);
     }
-    if (state.selectionMode) {
-      const mark = document.createElement('div');
+    if (!state.trash) {
+      const mark = document.createElement('button');
+      mark.type = 'button';
       mark.className = 'select-mark';
       mark.textContent = '✓';
+      mark.title = state.selected.has(item.id) ? 'Remove from selection' : 'Select image';
+      mark.setAttribute('aria-label', mark.title);
+      mark.setAttribute('aria-pressed', String(state.selected.has(item.id)));
+      mark.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleSelection(item.id);
+      });
       card.appendChild(mark);
     }
     if (item.rating > 0) {
@@ -247,7 +255,7 @@ function toggleSelection(id) {
 
 function updateSelectionUi() {
   $('#select-mode').classList.toggle('active', state.selectionMode);
-  $('#select-mode').textContent = state.selectionMode ? 'Selecting' : 'Select';
+  $('#select-mode').textContent = state.selectionMode ? 'Done selecting' : 'Batch select';
   $('#bulkbar').classList.toggle('hidden', !state.selectionMode);
   $('#bulk-count').textContent = `${state.selected.size} selected`;
 }
@@ -1124,6 +1132,7 @@ function bindBulkActions() {
   });
   $('#bulk-clear').addEventListener('click', () => {
     state.selected.clear();
+    state.selectionMode = false;
     updateSelectionUi();
     renderGrid();
   });
@@ -1170,6 +1179,7 @@ async function runBulk(operation, successMessage) {
     const result = await api('/api/bulk', { method: 'POST', body: { ids, ...operation } });
     toast(`${successMessage}: ${result.updated}`);
     state.selected.clear();
+    state.selectionMode = false;
     updateSelectionUi();
     loadStats();
     refreshAll();
