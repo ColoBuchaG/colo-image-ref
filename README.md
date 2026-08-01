@@ -1,4 +1,6 @@
 # Colo Image Ref
+## Note: most of this repository is vibecoded because I have more free tokens than time
+
 
 For complete installation and use instructions, read the
 [user guide](USER-GUIDE.md).
