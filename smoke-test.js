@@ -254,6 +254,24 @@ test('image list returns both, filters by query', async () => {
   assert.equal(q.data.items[0].id, idA);
 });
 
+test('manual order persists drag-style image reordering', async () => {
+  const initial = await j('/api/images?sort=manual&dir=asc&limit=200');
+  assert.ok(initial.data.items.every((item) => item.manual_order > 0));
+
+  const moved = await j('/api/reorder', {
+    method: 'POST', body: { id: idB, target_id: idA, position: 'before' },
+  });
+  assert.equal(moved.status, 200);
+  const reordered = await j('/api/images?sort=manual&dir=asc&limit=200');
+  assert.ok(reordered.data.items.findIndex((item) => item.id === idB)
+    < reordered.data.items.findIndex((item) => item.id === idA));
+
+  const restored = await j('/api/reorder', {
+    method: 'POST', body: { id: idA, target_id: idB, position: 'before' },
+  });
+  assert.equal(restored.status, 200);
+});
+
 test('A1111 metadata parsed: prompt, negative, settings, lora, tags', async () => {
   const res = await j(`/api/images/${idA}`);
   const d = res.data;
@@ -615,6 +633,35 @@ test('delete moves an image to Trash and restore preserves sidecar data', async 
   assert.equal(restored.data.notes, 'keep after trash');
   assert.ok(fs.existsSync(path.join(root, 'refs', 'uploaded.png')));
   assert.equal((await j('/api/stats')).data.trash, 0);
+});
+
+test('Trash supports permanent deletion of one image and emptying all images', async () => {
+  const activeDelete = await j(`/api/images/${idA}/permanent`, { method: 'DELETE' });
+  assert.equal(activeDelete.status, 409);
+
+  fs.writeFileSync(path.join(root, 'trash-one.png'), makePng());
+  fs.writeFileSync(path.join(root, 'trash-two.png'), makePng());
+  await j('/api/scan', { method: 'POST' });
+  const active = await j('/api/images?sort=name&dir=asc&limit=200');
+  const one = active.data.items.find((item) => item.name === 'trash-one.png');
+  const two = active.data.items.find((item) => item.name === 'trash-two.png');
+  assert.ok(one && two);
+
+  await j(`/api/images/${one.id}`, { method: 'DELETE' });
+  await j(`/api/images/${two.id}`, { method: 'DELETE' });
+  assert.equal((await j('/api/stats')).data.trash, 2);
+
+  const permanent = await j(`/api/images/${one.id}/permanent`, { method: 'DELETE' });
+  assert.equal(permanent.status, 200);
+  assert.equal((await j(`/api/images/${one.id}`)).status, 404);
+
+  const unconfirmed = await j('/api/trash', { method: 'DELETE', body: {} });
+  assert.equal(unconfirmed.status, 400);
+  const emptied = await j('/api/trash', { method: 'DELETE', body: { confirm: true } });
+  assert.equal(emptied.status, 200);
+  assert.equal(emptied.data.deleted, 1);
+  assert.equal((await j('/api/stats')).data.trash, 0);
+  assert.ok(!fs.readdirSync(path.join(root, '.image-ref-trash')).some((name) => /trash-(one|two)\.png$/.test(name)));
 });
 
 test('exact duplicate filter uses content hashes', async () => {

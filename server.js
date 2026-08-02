@@ -185,6 +185,14 @@ export function createServer() {
       const body = await readBody(req);
       return handleBulk(res, body);
     }
+    if (method === 'POST' && p === '/api/reorder') {
+      const body = await readBody(req);
+      return reorderImage(res, body);
+    }
+    if (method === 'DELETE' && p === '/api/trash') {
+      const body = await readBody(req);
+      return emptyTrash(res, body);
+    }
     if (method === 'GET' && p === '/api/images') {
       return sendJson(res, 200, listImages(url.searchParams));
     }
@@ -208,6 +216,10 @@ export function createServer() {
     const restoreMatch = p.match(/^\/api\/images\/(\d+)\/restore$/);
     if (restoreMatch && method === 'POST') {
       return restoreImage(res, Number(restoreMatch[1]));
+    }
+    const permanentDeleteMatch = p.match(/^\/api\/images\/(\d+)\/permanent$/);
+    if (permanentDeleteMatch && method === 'DELETE') {
+      return permanentlyDeleteImage(res, Number(permanentDeleteMatch[1]));
     }
     const moveMatch = p.match(/^\/api\/images\/(\d+)\/move$/);
     if (moveMatch && method === 'POST') {
@@ -337,7 +349,7 @@ export function createServer() {
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const sortCol = {
       mtime: 'i.mtime', name: 'i.name', size: 'i.size', created: 'i.created_at',
-      rating: 'i.rating', trashed: 'i.trashed_at',
+      rating: 'i.rating', manual: 'i.manual_order', trashed: 'i.trashed_at',
     }[params.get('sort')] || 'i.mtime';
     const sortDir = params.get('dir') === 'asc' ? 'ASC' : 'DESC';
     const page = Math.max(1, parseInt(params.get('page'), 10) || 1);
@@ -346,7 +358,7 @@ export function createServer() {
     const { total } = db.prepare(`SELECT COUNT(*) AS total FROM images i ${whereSql}`).get(...args);
     const items = db.prepare(`
       SELECT i.id, i.root, i.dir, i.name, i.ext, i.width, i.height, i.size, i.favorite, i.explicit,
-             i.rating, i.meta_status, i.content_hash, i.raw_meta,
+             i.rating, i.meta_status, i.content_hash, i.manual_order, i.raw_meta,
              i.created_at AS added
       FROM images i ${whereSql}
       ORDER BY ${sortCol} ${sortDir}, i.id ${sortDir}
@@ -512,6 +524,44 @@ export function createServer() {
       WHERE id = ?`)
       .run(row.original_rel_path, originalDir === '.' ? '' : originalDir, Date.now(), id);
     return sendJson(res, 200, getDetail(id));
+  }
+
+  function permanentlyDeleteImage(res, id) {
+    const row = db.prepare('SELECT * FROM images WHERE id = ?').get(id);
+    if (!row) return sendJson(res, 404, { error: 'not found' });
+    if (!row.trashed_at) return sendJson(res, 409, { error: 'image must be in Trash before permanent deletion' });
+    try {
+      permanentlyDeleteRow(row);
+    } catch (err) {
+      return sendJson(res, 500, { error: `permanent delete failed: ${err.message}` });
+    }
+    return sendJson(res, 200, { ok: true });
+  }
+
+  function emptyTrash(res, body) {
+    if (body.confirm !== true) return sendJson(res, 400, { error: 'empty Trash requires confirmation' });
+    const rows = db.prepare('SELECT * FROM images WHERE trashed_at != 0 ORDER BY id').all();
+    let deleted = 0;
+    for (const row of rows) {
+      try {
+        permanentlyDeleteRow(row);
+        deleted += 1;
+      } catch (err) {
+        return sendJson(res, 500, { error: `empty Trash stopped after ${deleted} image(s): ${err.message}` });
+      }
+    }
+    return sendJson(res, 200, { ok: true, deleted });
+  }
+
+  function permanentlyDeleteRow(row) {
+    if (!row.trashed_at) throw new Error('image is not in Trash');
+    const full = resolveImagePath(row);
+    if (!full) throw new Error('invalid Trash path');
+    if (fs.existsSync(full)) fs.unlinkSync(full);
+    const thumbPath = path.join(THUMB_DIR, `${row.id}.jpg`);
+    if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
+    thumbsInFlight.delete(row.id);
+    db.prepare('DELETE FROM images WHERE id = ?').run(row.id);
   }
 
   // Drag-drop upload: raw binary body, ?name=<filename>&dir=<target dir>&root=<root>.
@@ -703,6 +753,38 @@ export function createServer() {
       return sendJson(res, 400, { error: 'unsupported bulk action' });
     }
     return sendJson(res, 200, { ok: true, updated: rows.length });
+  }
+
+  function reorderImage(res, body) {
+    const id = Number(body.id);
+    const targetId = Number(body.target_id);
+    const position = body.position === 'after' ? 'after' : body.position === 'before' ? 'before' : '';
+    if (!Number.isInteger(id) || id < 1 || !Number.isInteger(targetId) || targetId < 1 || !position) {
+      return sendJson(res, 400, { error: 'id, target_id, and position are required' });
+    }
+    if (id === targetId) return sendJson(res, 200, { ok: true });
+
+    const ordered = db.prepare(`
+      SELECT id FROM images WHERE trashed_at = 0 ORDER BY manual_order, id
+    `).all().map((row) => row.id);
+    const movingIndex = ordered.indexOf(id);
+    const targetIndex = ordered.indexOf(targetId);
+    if (movingIndex < 0 || targetIndex < 0) return sendJson(res, 404, { error: 'image not found' });
+
+    ordered.splice(movingIndex, 1);
+    const newTargetIndex = ordered.indexOf(targetId);
+    ordered.splice(newTargetIndex + (position === 'after' ? 1 : 0), 0, id);
+
+    const update = db.prepare('UPDATE images SET manual_order = ? WHERE id = ?');
+    db.exec('BEGIN');
+    try {
+      ordered.forEach((imageId, index) => update.run(index + 1, imageId));
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+    return sendJson(res, 200, { ok: true });
   }
 
   function exportBasket(res, basketId) {

@@ -11,6 +11,7 @@
   <h1>Colo Image Ref</h1>
   <input id="search" type="search" placeholder="Search name, prompt, notes…" autocomplete="off">
   <select id="sort" title="Sort images">
+    <option value="manual:asc">Manual order</option>
     <option value="mtime:desc">Newest modified</option>
     <option value="mtime:asc">Oldest modified</option>
     <option value="created:desc">Recently added</option>
@@ -39,6 +40,7 @@
     <button class="nav-btn" data-nav="fav">Favorites <span id="stat-fav"></span></button>
     <button class="nav-btn" data-nav="duplicates">Duplicates <span id="stat-duplicates"></span></button>
     <button class="nav-btn" data-nav="trash">Trash <span id="stat-trash"></span></button>
+    <button id="empty-trash" class="empty-trash hidden" disabled>Empty Trash</button>
   </nav>
 
   <section>
@@ -90,6 +92,7 @@
 </aside>
 
 <main id="main">
+  <div id="reorder-hint" class="hidden">Drag thumbnails to save a manual order.</div>
   <div id="bulkbar" class="hidden">
     <strong id="bulk-count">0 selected</strong>
     <button id="bulk-loaded" class="mini">Select loaded</button>
@@ -190,6 +193,7 @@
     </div>
     <div class="p-block">
       <button id="p-delete" class="danger" title="Delete file from disk">Delete image</button>
+      <button id="p-permanent-delete" class="danger permanent-delete hidden">Delete permanently</button>
     </div>
   </div>
 </div>

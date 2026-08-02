@@ -80,6 +80,10 @@ edited from the UI via the **Folders** button. New installations default to
 - Images can be sorted by modified date, added date, filename, or rating. Delete
   actions move files into a hidden `.image-ref-trash` folder within their library
   root, preserving all sidecar data; the Trash view can restore them.
+- Trash also supports confirmed permanent deletion of one image or **Empty Trash**
+  for all trashed images. Permanent deletion cannot be undone.
+- **Manual order** enables persistent drag-and-drop thumbnail rearrangement. The
+  saved sidecar order does not rename, move, or modify image files.
 - Exact duplicates are detected with SHA-256. Visually similar images use a compact
   64-bit perceptual difference hash; hashes are calculated only for new or changed files.
 - Baskets are saved task-oriented selections, separate from permanent collections.

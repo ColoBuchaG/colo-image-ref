@@ -54,6 +54,7 @@ button.ghost { background: transparent; }
 button.danger { width: 100%; color: #ff7a7a; border-color: #5a2a2a; }
 button.danger:hover { border-color: #ff7a7a; background: #2a1515; }
 button.restore-action { width: 100%; color: #9ee1b8; border-color: #355e48; background: #133021; }
+.permanent-delete { margin-top: 7px; }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 button.mini { padding: 1px 7px; font-size: 12px; border-radius: 4px; }
 input, textarea, select {
@@ -112,6 +113,15 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
   border-radius: 6px;
 }
 .nav-btn.active, .nav-btn:hover { background: var(--panel-2); }
+.empty-trash {
+  width: 100%;
+  margin-top: 5px;
+  padding: 5px 9px;
+  border-color: #6b3039;
+  background: #29171b;
+  color: #ff929e;
+  font-size: 12px;
+}
 .p-src {
   display: inline-flex;
   align-items: center;
@@ -192,6 +202,15 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 
 /* main */
 #main { grid-area: main; overflow-y: auto; padding: 12px 14px; position: relative; }
+#reorder-hint {
+  margin: -4px 0 10px;
+  padding: 7px 10px;
+  border: 1px solid #425a8b;
+  border-radius: 6px;
+  background: #1c2943;
+  color: #bed0ff;
+  font-size: 12px;
+}
 #bulkbar {
   position: sticky;
   top: 0;
@@ -241,6 +260,11 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
   border: 1px solid transparent;
 }
 .card:hover { border-color: var(--accent); }
+.manual-order .card { cursor: grab; }
+.manual-order .card:active { cursor: grabbing; }
+.card.dragging { opacity: 0.38; }
+.card.drop-before { box-shadow: inset 5px 0 0 #7aa2ff; }
+.card.drop-after { box-shadow: inset -5px 0 0 #7aa2ff; }
 .card.selected { border-color: #8eaeff; box-shadow: inset 0 0 0 2px #8eaeff; }
 .card .select-mark {
   position: absolute;
@@ -325,7 +349,26 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 .card:hover .card-action,
 .card:focus-within .card-action { opacity: 1; pointer-events: auto; }
 .card-action.restore { right: 7px; border-color: #355e48; background: rgba(19, 48, 33, 0.94); color: #9ee1b8; opacity: 1; pointer-events: auto; }
+.card-action.icon-only { width: 28px; padding: 1px; }
+.trash-icon { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .card-action:hover { border-color: currentColor; }
+.card-permanent {
+  position: absolute;
+  z-index: 4;
+  top: 7px;
+  right: 70px;
+  height: 22px;
+  padding: 1px 7px;
+  border-color: #793a43;
+  background: rgba(42, 21, 21, 0.94);
+  color: #ff9ca7;
+  font-size: 10px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+.card:hover .card-permanent,
+.card:focus-within .card-permanent { opacity: 1; pointer-events: auto; }
 .card:hover .label { opacity: 1; }
 .source-badge {
   position: absolute;

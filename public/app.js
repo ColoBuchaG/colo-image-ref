@@ -33,8 +33,11 @@ const state = {
   folders: [],
   collections: [],
   baskets: [],
+  trashCount: 0,
   selectionMode: false,
   selected: new Set(),
+  draggedId: null,
+  suppressCardClickUntil: 0,
   detailIndex: -1,
   detail: null,
 };
@@ -125,15 +128,27 @@ function mediaUrl(kind, image) {
 function renderGrid() {
   const grid = $('#grid');
   grid.textContent = '';
+  const manualOrder = state.sort === 'manual' && !state.trash && !state.similarTo;
+  const canReorder = manualOrder && !state.selectionMode;
+  const reorderHint = $('#reorder-hint');
+  reorderHint.classList.toggle('hidden', !manualOrder);
+  reorderHint.textContent = state.selectionMode
+    ? 'Finish batch selection to rearrange images.'
+    : 'Drag thumbnails to save a manual order.';
+  grid.classList.toggle('manual-order', canReorder);
   const frag = document.createDocumentFragment();
   state.items.forEach((item, i) => {
     const card = document.createElement('div');
     card.className = 'card';
+    card.dataset.imageId = String(item.id);
+    card.draggable = canReorder;
+    if (canReorder) bindCardReorder(card, item.id);
     card.classList.toggle('selected', state.selected.has(item.id));
     const img = document.createElement('img');
     img.src = mediaUrl('thumb', item);
     img.loading = 'lazy';
     img.decoding = 'async';
+    img.draggable = false;
     img.alt = item.name;
     card.appendChild(img);
     const sourceInfo = SOURCE_INFO[item.source];
@@ -185,19 +200,33 @@ function renderGrid() {
       card.appendChild(rating);
     }
     const action = document.createElement('button');
-    action.className = `card-action${state.trash ? ' restore' : ''}`;
-    action.textContent = state.trash ? 'Restore' : 'Delete';
+    action.className = `card-action${state.trash ? ' restore' : ' icon-only'}`;
+    if (state.trash) action.textContent = 'Restore';
+    else action.appendChild(makeTrashIcon());
     action.title = state.trash ? 'Restore image' : 'Move image to Trash';
+    action.setAttribute('aria-label', action.title);
     action.addEventListener('click', async (event) => {
       event.stopPropagation();
       await runCardAction(item, i);
     });
     card.appendChild(action);
+    if (state.trash) {
+      const permanent = document.createElement('button');
+      permanent.className = 'card-permanent';
+      permanent.textContent = 'Delete forever';
+      permanent.title = 'Permanently delete this image';
+      permanent.addEventListener('click', async (event) => {
+        event.stopPropagation();
+        await permanentlyDeleteCard(item, i);
+      });
+      card.appendChild(permanent);
+    }
     const label = document.createElement('div');
     label.className = 'label';
     label.textContent = item.name;
     card.appendChild(label);
     card.addEventListener('click', (event) => {
+      if (Date.now() < state.suppressCardClickUntil) return;
       if (state.selectionMode || event.ctrlKey || event.metaKey) {
         toggleSelection(item.id);
       } else {
@@ -209,6 +238,90 @@ function renderGrid() {
   grid.appendChild(frag);
 }
 
+function makeTrashIcon() {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.classList.add('trash-icon');
+  for (const d of ['M4 7h16', 'M9 7V4h6v3', 'M6 7l1 14h10l1-14', 'M10 11v6', 'M14 11v6']) {
+    const part = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    part.setAttribute('d', d);
+    svg.appendChild(part);
+  }
+  return svg;
+}
+
+function bindCardReorder(card, imageId) {
+  card.addEventListener('dragstart', (event) => {
+    if (event.target.closest('button')) {
+      event.preventDefault();
+      return;
+    }
+    state.draggedId = imageId;
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(imageId));
+    requestAnimationFrame(() => card.classList.add('dragging'));
+  });
+  card.addEventListener('dragover', (event) => {
+    if (!state.draggedId || state.draggedId === imageId) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    clearDropMarkers();
+    const position = dropPosition(card, event);
+    card.dataset.dropPosition = position;
+    card.classList.add(position === 'before' ? 'drop-before' : 'drop-after');
+  });
+  card.addEventListener('drop', async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const movingId = state.draggedId;
+    const position = card.dataset.dropPosition || dropPosition(card, event);
+    clearDropMarkers();
+    if (!movingId || movingId === imageId) return;
+
+    const fromIndex = state.items.findIndex((item) => item.id === movingId);
+    const targetIndex = state.items.findIndex((item) => item.id === imageId);
+    if (fromIndex < 0 || targetIndex < 0) return;
+    const [moving] = state.items.splice(fromIndex, 1);
+    let insertIndex = targetIndex + (position === 'after' ? 1 : 0);
+    if (fromIndex < insertIndex) insertIndex -= 1;
+    state.items.splice(insertIndex, 0, moving);
+    state.draggedId = null;
+    state.suppressCardClickUntil = Date.now() + 300;
+    renderGrid();
+
+    try {
+      await api('/api/reorder', {
+        method: 'POST',
+        body: { id: movingId, target_id: imageId, position },
+      });
+      toast('Manual order saved');
+    } catch (err) {
+      toast(err.message, true);
+      loadImages(true);
+    }
+  });
+  card.addEventListener('dragend', () => {
+    state.draggedId = null;
+    card.classList.remove('dragging');
+    clearDropMarkers();
+  });
+}
+
+function dropPosition(card, event) {
+  const rect = card.getBoundingClientRect();
+  const columns = getComputedStyle($('#grid')).gridTemplateColumns.split(' ').length;
+  if (columns > 1) return event.clientX < rect.left + rect.width / 2 ? 'before' : 'after';
+  return event.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+}
+
+function clearDropMarkers() {
+  document.querySelectorAll('.card.drop-before, .card.drop-after').forEach((item) => {
+    item.classList.remove('drop-before', 'drop-after');
+    delete item.dataset.dropPosition;
+  });
+}
+
 async function runCardAction(item, index) {
   const restoring = state.trash;
   if (!restoring && !confirm(`Move ${item.name} to Trash?`)) return;
@@ -217,6 +330,20 @@ async function runCardAction(item, index) {
     state.selected.delete(item.id);
     state.items.splice(index, 1);
     toast(restoring ? 'Image restored' : 'Image moved to Trash');
+    renderGrid();
+    loadStats();
+    loadFolders();
+  } catch (err) {
+    toast(err.message, true);
+  }
+}
+
+async function permanentlyDeleteCard(item, index) {
+  if (!confirm(`Permanently delete ${item.name}? This action cannot be undone.`)) return;
+  try {
+    await api(`/api/images/${item.id}/permanent`, { method: 'DELETE' });
+    state.items.splice(index, 1);
+    toast('Image permanently deleted');
     renderGrid();
     loadStats();
     loadFolders();
@@ -288,7 +415,16 @@ async function loadStats() {
     $('#stat-images').textContent = s.images;
     $('#stat-duplicates').textContent = s.duplicates || '';
     $('#stat-trash').textContent = s.trash || '';
+    state.trashCount = s.trash || 0;
+    updateTrashControls();
   } catch { /* non-fatal */ }
+}
+
+function updateTrashControls() {
+  const button = $('#empty-trash');
+  button.classList.toggle('hidden', !state.trash);
+  button.disabled = state.trashCount === 0;
+  button.textContent = state.trashCount ? `Empty Trash (${state.trashCount})` : 'Empty Trash';
 }
 
 async function loadFolders() {
@@ -473,6 +609,7 @@ function setNav(which) {
     state.selected.clear();
   }
   $('#select-mode').disabled = state.trash;
+  updateTrashControls();
   updateSelectionUi();
   document.querySelectorAll('.nav-btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.nav === which);
@@ -661,6 +798,7 @@ function renderDetail() {
   $('#p-delete').textContent = d.trashed_at ? 'Restore image' : 'Move to Trash';
   $('#p-delete').classList.toggle('danger', !d.trashed_at);
   $('#p-delete').classList.toggle('restore-action', Boolean(d.trashed_at));
+  $('#p-permanent-delete').classList.toggle('hidden', !d.trashed_at);
   $('#p-move').closest('.p-block').classList.toggle('hidden', Boolean(d.trashed_at));
   applyDetailBlur();
   const srcEl = $('#p-src');
@@ -988,6 +1126,22 @@ function bindDetailEvents() {
     }
   });
   $('#p-delete').addEventListener('click', deleteDetail);
+  $('#p-permanent-delete').addEventListener('click', async () => {
+    const d = state.detail;
+    if (!d?.trashed_at) return;
+    if (!confirm(`Permanently delete ${d.name}? This action cannot be undone.`)) return;
+    try {
+      await api(`/api/images/${d.id}/permanent`, { method: 'DELETE' });
+      state.items.splice(state.detailIndex, 1);
+      toast('Image permanently deleted');
+      closeDetail();
+      renderGrid();
+      loadStats();
+      loadFolders();
+    } catch (err) {
+      toast(err.message, true);
+    }
+  });
   async function deleteDetail() {
     const d = state.detail;
     if (!d) return;
@@ -1068,6 +1222,22 @@ function bindHeader() {
       refreshAll();
     } catch (err) {
       toast(err.message, true);
+    }
+  });
+  $('#empty-trash').addEventListener('click', async () => {
+    if (!state.trashCount) return;
+    if (!confirm(`Permanently delete all ${state.trashCount} image(s) in Trash? This action cannot be undone.`)) return;
+    try {
+      const result = await api('/api/trash', { method: 'DELETE', body: { confirm: true } });
+      toast(`Trash emptied: ${result.deleted}`);
+      state.items = [];
+      renderGrid();
+      loadStats();
+      loadFolders();
+    } catch (err) {
+      toast(err.message, true);
+      loadStats();
+      loadImages(true);
     }
   });
   document.querySelectorAll('.nav-btn').forEach((b) => {
@@ -1282,6 +1452,7 @@ function bindDrop() {
 function init() {
   $('#blur-explicit').checked = state.blurExplicit;
   $('#show-source-badges').checked = state.showSourceBadges;
+  $('#sort').value = `${state.sort}:${state.sortDir}`;
   updateSelectionUi();
   bindHeader();
   bindDetailEvents();

@@ -378,6 +378,20 @@ The browser saves this setting.
 Use the **Delete** button to the left of an image selection circle to move only
 that image to Trash.
 
+### Delete images permanently
+
+1. Select **Trash** in the sidebar.
+2. To delete one image, put the pointer on the image.
+3. Select **Delete forever**.
+4. Read the warning.
+5. Confirm the action.
+
+To delete all images in Trash, select **Empty Trash** below the Trash menu item.
+Read the warning and confirm the action.
+
+Permanent deletion removes the image file and its sidecar information.
+You cannot undo permanent deletion.
+
 ### Select and change multiple images
 
 1. Find the selection circle in the upper-right corner of an image.
@@ -390,6 +404,20 @@ that image to Trash.
 
 Use **Select loaded** to select all images that are currently loaded in the gallery.
 Use **Cancel selection** to clear the selection without a change.
+
+### Rearrange images
+
+1. Open the sort menu above the gallery.
+2. Select **Manual order**.
+3. Put the pointer on an image.
+4. Press and hold the primary mouse button.
+5. Drag the image to a new position.
+6. Release the mouse button.
+7. Wait for the **Manual order saved** message.
+
+Colo Image Ref saves the order in the sidecar database.
+This action does not rename, move, or change an image file.
+Select a different sort option to temporarily show images in a different order.
 
 The application saves ratings, notes, collections, and tags in the `data` folder.
 The application does not write this information into the image files.
