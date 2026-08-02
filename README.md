@@ -93,5 +93,6 @@ edited from the UI via the **Folders** button. New installations default to
   double-click toggles zoom.
 - "Move to folder" in the detail panel physically moves the file inside its root.
 
-Thumbnails and perceptual hashes use ffmpeg. Basket export uses the system `zip`
-command. Requires Node >= 22 (built-in `node:sqlite`, no npm dependencies).
+Thumbnails and perceptual hashes use ffmpeg. Basket ZIP export is implemented
+inside the application and requires no additional command. Requires Node >= 22
+(built-in `node:sqlite`, no npm dependencies).

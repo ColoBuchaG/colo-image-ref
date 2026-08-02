@@ -3,11 +3,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { execFile, spawn } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { openDb, migrateImageTagsPolarity } from './lib/db.js';
 import { scanRoots, makeIndexer, reparseAllPromptRelations, IMG_EXTS } from './lib/scanner.js';
 import { detectSource } from './lib/meta.js';
 import { createLibraryWatcher } from './lib/watcher.js';
+import { streamStoredZip } from './lib/zip.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -797,30 +798,25 @@ export function createServer() {
     `).all(basketId);
     if (!rows.length) return sendJson(res, 400, { error: 'basket is empty' });
 
-    const stage = fs.mkdtempSync(path.join(os.tmpdir(), 'image-ref-basket-'));
     const used = new Set();
+    const entries = [];
     for (const row of rows) {
       const source = resolveImagePath(row);
       if (!source || !fs.existsSync(source)) continue;
       let name = path.basename(row.name).replace(/[\\/]/g, '_');
       if (used.has(name.toLowerCase())) name = `${row.id}-${name}`;
       used.add(name.toLowerCase());
-      fs.symlinkSync(source, path.join(stage, name));
+      entries.push({ name, path: source });
     }
+    if (!entries.length) return sendJson(res, 404, { error: 'basket files were not found' });
     const filename = `${basket.name.replace(/[^a-z0-9._-]+/gi, '-').replace(/^-|-$/g, '') || 'basket'}.zip`;
     res.writeHead(200, {
       'Content-Type': 'application/zip',
       'Content-Disposition': `attachment; filename="${filename}"`,
       'Cache-Control': 'no-store',
     });
-    const zip = spawn('zip', ['-q', '-0', '-r', '-', '.'], { cwd: stage });
-    zip.stdout.pipe(res);
-    zip.stderr.on('data', (chunk) => console.error(`basket export: ${chunk}`));
-    const cleanup = () => fs.rmSync(stage, { recursive: true, force: true });
-    zip.on('close', cleanup);
-    zip.on('error', (err) => {
+    streamStoredZip(res, entries).then(() => res.end()).catch((err) => {
       console.error(`basket export: ${err.message}`);
-      cleanup();
       res.destroy(err);
     });
   }

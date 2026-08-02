@@ -60,6 +60,34 @@ function makePng(texts = {}) {
   return Buffer.concat(parts);
 }
 
+function readStoredZip(buffer) {
+  const endOffset = buffer.lastIndexOf(Buffer.from('PK\x05\x06', 'latin1'));
+  assert.ok(endOffset >= 0, 'ZIP end record is missing');
+  const count = buffer.readUInt16LE(endOffset + 10);
+  let offset = buffer.readUInt32LE(endOffset + 16);
+  const entries = new Map();
+  for (let index = 0; index < count; index += 1) {
+    assert.equal(buffer.readUInt32LE(offset), 0x02014b50, 'ZIP central record is invalid');
+    assert.equal(buffer.readUInt16LE(offset + 10), 0, 'basket ZIP unexpectedly compressed an image');
+    const expectedCrc = buffer.readUInt32LE(offset + 16);
+    const size = buffer.readUInt32LE(offset + 24);
+    const nameLength = buffer.readUInt16LE(offset + 28);
+    const extraLength = buffer.readUInt16LE(offset + 30);
+    const commentLength = buffer.readUInt16LE(offset + 32);
+    const localOffset = buffer.readUInt32LE(offset + 42);
+    const name = buffer.subarray(offset + 46, offset + 46 + nameLength).toString('utf8');
+    assert.equal(buffer.readUInt32LE(localOffset), 0x04034b50, 'ZIP local record is invalid');
+    const localNameLength = buffer.readUInt16LE(localOffset + 26);
+    const localExtraLength = buffer.readUInt16LE(localOffset + 28);
+    const dataOffset = localOffset + 30 + localNameLength + localExtraLength;
+    const data = buffer.subarray(dataOffset, dataOffset + size);
+    assert.equal(crc32(data), expectedCrc, `ZIP CRC is invalid for ${name}`);
+    entries.set(name, data);
+    offset += 46 + nameLength + extraLength + commentLength;
+  }
+  return entries;
+}
+
 function makeStealthPng(metadata) {
   const width = 64;
   const height = 64;
@@ -392,8 +420,11 @@ test('ratings and baskets support bulk operations and ZIP export', async () => {
   const zip = await fetch(`${base}/api/baskets/${exportBasketId}/export`);
   assert.equal(zip.status, 200);
   assert.equal(zip.headers.get('content-type'), 'application/zip');
-  const bytes = new Uint8Array(await zip.arrayBuffer());
-  assert.equal(String.fromCharCode(...bytes.slice(0, 2)), 'PK');
+  const bytes = Buffer.from(await zip.arrayBuffer());
+  const exported = readStoredZip(bytes);
+  assert.deepEqual([...exported.keys()].sort(), ['a-meta.png', 'b-plain.png']);
+  assert.deepEqual(exported.get('a-meta.png'), fs.readFileSync(path.join(root, 'a-meta.png')));
+  assert.deepEqual(exported.get('b-plain.png'), fs.readFileSync(path.join(root, 'b-plain.png')));
   assert.ok(fs.existsSync(path.join(root, 'a-meta.png')), 'basket export modified an original');
 });
 

@@ -108,9 +108,7 @@ ffmpeg -version
 8. Press Enter.
 9. Make sure that FFmpeg information appears.
 
-Windows does not include the `zip` command that basket export uses.
-The other application functions work without this command.
-Basket ZIP export requires a compatible `zip` command in the Windows PATH.
+Basket ZIP export requires no additional installation.
 
 ### 4.4 Extract and start Colo Image Ref
 

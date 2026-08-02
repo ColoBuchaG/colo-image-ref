@@ -1,6 +1,6 @@
 {
   "name": "colo-image-ref",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "private": true,
   "type": "module",
   "files": [
@@ -16,7 +16,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "check": "node --check server.js && node --check smoke-test.js && node --check public/app.js && node --check lib/db.js && node --check lib/imagefile.js && node --check lib/meta.js && node --check lib/scanner.js && node --check lib/watcher.js",
+    "check": "node --check server.js && node --check smoke-test.js && node --check public/app.js && node --check lib/db.js && node --check lib/imagefile.js && node --check lib/meta.js && node --check lib/scanner.js && node --check lib/watcher.js && node --check lib/zip.js",
     "smoke": "node smoke-test.js"
   },
   "engines": {
