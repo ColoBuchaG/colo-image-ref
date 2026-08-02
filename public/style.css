@@ -112,7 +112,16 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
   padding: 7px 9px;
   border-radius: 6px;
 }
-.nav-btn.active, .nav-btn:hover { background: var(--panel-2); }
+.nav-btn:hover { background: var(--panel-2); }
+.nav-btn.active {
+  border: 1px solid #668fe8;
+  border-left: 4px solid #8eaeff;
+  background: linear-gradient(90deg, #294579, #233451);
+  color: #eef4ff;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(142, 174, 255, 0.12), 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+.nav-btn.active span { color: #dce7ff; opacity: 1; }
 .empty-trash {
   width: 100%;
   margin-top: 5px;
